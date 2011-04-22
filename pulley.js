@@ -15,8 +15,7 @@ var repos = {
 	github_user = "",
 	github_token = "";
 
-var sys = require("sys"),
-	child = require("child_process"),
+var child = require("child_process"),
 	exec = child.exec,
 	spawn = child.spawn,
 	http = require("https"),
@@ -40,7 +39,7 @@ if ( !github_user || !github_token ) {
 				tracker = repos[ user_repo ];
 
 				if ( user_repo ) {
-					tracker = tracker || "https://github.com/" + user_repo + "/issues/"
+					tracker = tracker || "https://github.com/" + user_repo + "/issues/";
 
 					init();
 
@@ -179,34 +178,26 @@ function commit( pull ) {
 
 		res.on( "end", function() {
 			var author = (/From: (.*)/.exec( data.join("") ) || [])[1],
-				tmp = [], bugs = [], urls = [], msg = "",
+				tmp = {}, urls = [], msg = "",
 				search = pull.title + " " + pull.body,
 				findBug = /#(\d{4,5})/g,
 				match;
 
 			while ( (match = findBug.exec( search )) ) {
-				tmp.push( match[1] );
+				tmp[ match[1] ] = 1;
 			}
-
-			tmp.sort();
-
-			for ( var i = 0; i < tmp.length; i++ ) {
-				if ( bugs.length === 0 || bugs[ bugs.length - 1 ] !== tmp[i] ) {
-					bugs.push( tmp[i] );
-				}
-			}
-
+			
 			msg = "Landing pull request " + id + ". " + pull.title + " Fixes ";
 
 			urls.push( "https://github.com/" + user_repo + "/pull/" + id );
 
-			msg += (bugs.map(function( num ) {
+			msg += (Object.keys( tmp ).sort().map(function( num ) {
 				if ( tracker ) {
 					urls.push( tracker + num );
 				}
 
 				return "#" + num;
-			}).join(", ") || "Fixed #????") + ".";
+			}).join(", ") || "#????") + ".";
 
 			msg += "\n\nMore Details:" + urls.map(function( url ) {
 				return "\n - " + url;
